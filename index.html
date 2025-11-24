@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Video Progress Demo – Smooth vs Native</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        line-height: 1.4;
+      }
+      video {
+        display: block;
+        width: 100%;
+        max-width: 640px;
+      }
+      .custom-progress-container {
+        width: 100%;
+        max-width: 640px;
+        height: 10px;
+        background-color: #ddd;
+        position: relative;
+        border-radius: 10px;
+      }
+      .custom-progress-bar {
+        height: 100%;
+        background: linear-gradient(to right, #f03 80%, #ff2791 100%);
+        width: 0%;
+        transform-origin: left center;
+        border-radius: 10px;
+      }
+      .label {
+        margin-bottom: 0;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Video Progress Bar Demo</h1>
+
+    <video
+      id="video"
+      controls
+      src="/youtube-smooth-progressbar/output.mp4"
+    >
+      Your browser does not support the video tag.
+    </video>
+
+    <p class="label">
+      Smooth Custom progress bar updating via
+      <code>requestAnimationFrame()</code>:
+    </p>
+    <div class="custom-progress-container">
+      <div id="customBar" class="custom-progress-bar"></div>
+    </div>
+
+    <script>
+      const video = document.getElementById("video");
+      const customBar = document.getElementById("customBar");
+
+      let rafId = null;
+
+      function updateCustomBar(time) {
+        if (!video.duration) {
+          // not ready yet
+          rafId = requestAnimationFrame(updateCustomBar);
+          return;
+        }
+        const progressRatio = video.currentTime / video.duration;
+        // Use CSS transform for smoother updates
+        customBar.style.width = progressRatio * 100 + "%";
+        // Continue if video is playing
+        if (!video.paused && !video.ended) {
+          rafId = requestAnimationFrame(updateCustomBar);
+        }
+      }
+
+      video.addEventListener("play", () => {
+        if (rafId === null) {
+          rafId = requestAnimationFrame(updateCustomBar);
+        }
+      });
+
+      video.addEventListener("pause", () => {
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+      });
+
+      video.addEventListener("ended", () => {
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        // ensure full bar at end
+        customBar.style.width = "100%";
+      });
+
+      // Also if user seeks, update bar
+      video.addEventListener("seeking", () => {
+        updateCustomBar();
+      });
+    </script>
+  </body>
+</html>
